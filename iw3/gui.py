@@ -107,43 +107,43 @@ class MainFrame(wx.Frame):
         if LAYOUT_DEBUG:
             self.pnl_file.SetBackgroundColour("#ccf")
 
-        self.lbl_input = wx.StaticText(self.pnl_file, label=T("Input"))
+        self.lbl_input = wx.StaticText(self.pnl_file, label=T("输入"))
         self.txt_input = wx.TextCtrl(self.pnl_file, name="txt_input")
         self.btn_input_file = GenBitmapButton(self.pnl_file, bitmap=load_icon("image-open.png"))
-        self.btn_input_file.SetToolTip(T("Choose a file"))
+        self.btn_input_file.SetToolTip(T("选择文件"))
         self.btn_input_dir = GenBitmapButton(self.pnl_file, bitmap=load_icon("folder-open.png"))
-        self.btn_input_dir.SetToolTip(T("Choose a directory"))
+        self.btn_input_dir.SetToolTip(T("选择目录"))
         self.btn_input_play = GenBitmapButton(self.pnl_file, bitmap=load_icon("media-playback-start.png"))
-        self.btn_input_play.SetToolTip(T("Play"))
+        self.btn_input_play.SetToolTip(T("播放"))
 
-        self.lbl_output = wx.StaticText(self.pnl_file, label=T("Output"))
+        self.lbl_output = wx.StaticText(self.pnl_file, label=T("输出"))
         self.txt_output = wx.TextCtrl(self.pnl_file, name="txt_output")
         self.btn_same_output_dir = GenBitmapButton(self.pnl_file, bitmap=load_icon("emblem-symbolic-link.png"))
-        self.btn_same_output_dir.SetToolTip(T("Set the same directory"))
+        self.btn_same_output_dir.SetToolTip(T("设置为相同目录"))
         self.btn_output_dir = GenBitmapButton(self.pnl_file, bitmap=load_icon("folder-open.png"))
-        self.btn_output_dir.SetToolTip(T("Choose a directory"))
+        self.btn_output_dir.SetToolTip(T("选择目录"))
         self.btn_output_play = GenBitmapButton(self.pnl_file, bitmap=load_icon("media-playback-start.png"))
-        self.btn_output_play.SetToolTip(T("Play"))
+        self.btn_output_play.SetToolTip(T("播放"))
 
-        self.chk_resume = wx.CheckBox(self.pnl_file, label=T("Resume"), name="chk_resume")
+        self.chk_resume = wx.CheckBox(self.pnl_file, label=T("继续"), name="chk_resume")
         self.chk_resume.SetToolTip(T("Skip processing when the output file already exists"))
         self.chk_resume.SetValue(True)
 
-        self.chk_recursive = wx.CheckBox(self.pnl_file, label=T("Process all subfolders"),
+        self.chk_recursive = wx.CheckBox(self.pnl_file, label=T("处理所有子文件夹"),
                                          name="chk_recursive")
         self.chk_recursive.SetValue(False)
 
-        self.chk_exif_transpose = wx.CheckBox(self.pnl_file, label=T("EXIF Transpose"),
+        self.chk_exif_transpose = wx.CheckBox(self.pnl_file, label=T("EXIF 转置"),
                                               name="chk_exif_transpose")
         self.chk_exif_transpose.SetValue(True)
         self.chk_exif_transpose.SetToolTip(T("Transpose images according to EXIF Orientaion Tag"))
 
-        self.chk_metadata = wx.CheckBox(self.pnl_file, label=T("Add metadata to filename"),
+        self.chk_metadata = wx.CheckBox(self.pnl_file, label=T("将元数据添加到文件名"),
                                         name="chk_metadata")
         self.chk_metadata.SetValue(False)
 
         self.sep_image_format = wx.StaticLine(self.pnl_file, size=(2, 16), style=wx.LI_VERTICAL)
-        self.lbl_image_format = wx.StaticText(self.pnl_file, label=" " + T("Image Format"))
+        self.lbl_image_format = wx.StaticText(self.pnl_file, label=" " + T("图像格式"))
         self.cbo_image_format = wx.ComboBox(self.pnl_file, choices=["png", "jpeg", "webp"],
                                             style=wx.CB_READONLY, name="cbo_image_format")
         self.cbo_image_format.SetSelection(0)
@@ -186,24 +186,24 @@ class MainFrame(wx.Frame):
 
         self.grp_stereo = wx.StaticBox(self.pnl_options, label=T("Stereo Generation"))
 
-        self.lbl_divergence = wx.StaticText(self.grp_stereo, label=T("3D Strength"))
+        self.lbl_divergence = wx.StaticText(self.grp_stereo, label=T("3D 强度"))
         self.cbo_divergence = EditableComboBox(self.grp_stereo, choices=["5.0", "4.0", "3.0", "2.5", "2.0", "1.0"],
                                                name="cbo_divergence")
         self.cbo_divergence.SetToolTip("Divergence")
         self.cbo_divergence.SetSelection(4)
 
-        self.lbl_convergence = wx.StaticText(self.grp_stereo, label=T("Convergence Plane"))
+        self.lbl_convergence = wx.StaticText(self.grp_stereo, label=T("收敛平面"))
         self.cbo_convergence = EditableComboBox(self.grp_stereo, choices=["0.0", "0.5", "1.0"],
                                                 name="cbo_convergence")
         self.cbo_convergence.SetSelection(1)
         self.cbo_convergence.SetToolTip("Convergence")
 
-        self.lbl_ipd_offset = wx.StaticText(self.grp_stereo, label=T("Your Own Size"))
+        self.lbl_ipd_offset = wx.StaticText(self.grp_stereo, label=T("您的大小"))
         # SpinCtrlDouble is better, but cannot save with PersistenceManager
         self.sld_ipd_offset = wx.SpinCtrl(self.grp_stereo, value="0", min=-10, max=20, name="sld_ipd_offset")
         self.sld_ipd_offset.SetToolTip("IPD Offset")
 
-        self.lbl_method = wx.StaticText(self.grp_stereo, label=T("Method"))
+        self.lbl_method = wx.StaticText(self.grp_stereo, label=T("方法"))
         self.cbo_method = wx.ComboBox(self.grp_stereo, choices=["row_flow_v3", "row_flow_v2", "forward_fill"],
                                       style=wx.CB_READONLY, name="cbo_method")
         self.cbo_method.SetSelection(0)
@@ -215,7 +215,7 @@ class MainFrame(wx.Frame):
         self.cbo_stereo_width.SetSelection(0)
         self.cbo_stereo_width.SetToolTip(T("Only used for row_flow_v3 and row_flow_v2"))
 
-        self.lbl_depth_model = wx.StaticText(self.grp_stereo, label=T("Depth Model"))
+        self.lbl_depth_model = wx.StaticText(self.grp_stereo, label=T("深度模型"))
         depth_models = [
             "ZoeD_N", "ZoeD_K", "ZoeD_NK",
             "ZoeD_Any_N", "ZoeD_Any_K",
@@ -245,13 +245,13 @@ class MainFrame(wx.Frame):
                                                     name="cbo_zoed_resolution")
         self.cbo_zoed_resolution.SetSelection(0)
 
-        self.lbl_foreground_scale = wx.StaticText(self.grp_stereo, label=T("Foreground Scale"))
+        self.lbl_foreground_scale = wx.StaticText(self.grp_stereo, label=T("前景比例"))
         self.cbo_foreground_scale = EditableComboBox(self.grp_stereo,
                                                      choices=["-3", "-2", "-1", "0", "1", "2", "3"],
                                                      name="cbo_foreground_scale")
         self.cbo_foreground_scale.SetSelection(3)
 
-        self.chk_edge_dilation = wx.CheckBox(self.grp_stereo, label=T("Edge Fix"), name="chk_edge_dilation")
+        self.chk_edge_dilation = wx.CheckBox(self.grp_stereo, label=T("边缘修复"), name="chk_edge_dilation")
         self.cbo_edge_dilation = EditableComboBox(self.grp_stereo,
                                                   choices=["0", "1", "2", "3", "4"],
                                                   name="cbo_edge_dilation")
@@ -260,7 +260,7 @@ class MainFrame(wx.Frame):
         self.cbo_edge_dilation.SetSelection(2)
         self.cbo_edge_dilation.SetToolTip(T("Reduce distortion of foreground and background edges"))
 
-        self.lbl_stereo_format = wx.StaticText(self.grp_stereo, label=T("Stereo Format"))
+        self.lbl_stereo_format = wx.StaticText(self.grp_stereo, label=T("立体格式"))
         self.cbo_stereo_format = wx.ComboBox(
             self.grp_stereo,
             choices=["Full SBS", "Half SBS",
@@ -278,7 +278,7 @@ class MainFrame(wx.Frame):
         self.cbo_stereo_format.SetSelection(0)
 
         self.chk_ema_normalize = wx.CheckBox(self.grp_stereo,
-                                             label=T("Flicker Reduction"),
+                                             label=T("闪烁减少"),
                                              name="chk_ema_normalize")
         self.chk_ema_normalize.SetToolTip(T("Video Only") + " " + T("(experimental)"))
         self.cbo_ema_decay = EditableComboBox(self.grp_stereo, choices=["0.99", "0.9", "0.75", "0.5"],
@@ -319,29 +319,29 @@ class MainFrame(wx.Frame):
         # max-fps, crf, preset, tune
         self.grp_video = wx.StaticBox(self.pnl_options, label=T("Video Encoding"))
 
-        self.lbl_video_format = wx.StaticText(self.grp_video, label=T("Video Format"))
+        self.lbl_video_format = wx.StaticText(self.grp_video, label=T("视频格式"))
         self.cbo_video_format = wx.ComboBox(self.grp_video, choices=["mp4", "mkv", "avi"],
                                             style=wx.CB_READONLY, name="cbo_video_format")
         self.cbo_video_format.SetSelection(0)
 
-        self.lbl_video_codec = wx.StaticText(self.grp_video, label=T("Video Codec"))
+        self.lbl_video_codec = wx.StaticText(self.grp_video, label=T("视频编码器"))
         self.cbo_video_codec = EditableComboBox(
             self.grp_video, choices=["libx264", "libx265", "h264_nvenc", "hevc_nvenc", "utvideo"],
             name="cbo_video_codec")
         self.cbo_video_codec.SetSelection(0)
 
-        self.lbl_fps = wx.StaticText(self.grp_video, label=T("Max FPS"))
+        self.lbl_fps = wx.StaticText(self.grp_video, label=T("最大帧率"))
         self.cbo_fps = EditableComboBox(
             self.grp_video, choices=["1000", "60", "59.94", "30", "29.97", "24", "23.976", "15", "1", "0.25"],
             name="cbo_fps")
         self.cbo_fps.SetSelection(3)
 
-        self.lbl_pix_fmt = wx.StaticText(self.grp_video, label=T("Pixel Format"))
+        self.lbl_pix_fmt = wx.StaticText(self.grp_video, label=T("像素格式"))
         self.cbo_pix_fmt = wx.ComboBox(self.grp_video, choices=["yuv420p", "yuv444p", "rgb24"],
                                        style=wx.CB_READONLY, name="cbo_pix_fmt")
         self.cbo_pix_fmt.SetSelection(0)
 
-        self.lbl_colorspace = wx.StaticText(self.grp_video, label=T("Colorspace"))
+        self.lbl_colorspace = wx.StaticText(self.grp_video, label=T("色彩空间"))
         self.cbo_colorspace = wx.ComboBox(
             self.grp_video,
             choices=["auto", "unspecified", "bt709", "bt709-pc", "bt709-tv", "bt601", "bt601-pc", "bt601-tv"],
@@ -353,17 +353,17 @@ class MainFrame(wx.Frame):
                                         name="cbo_crf")
         self.cbo_crf.SetSelection(4)
 
-        self.lbl_profile_level = wx.StaticText(self.grp_video, label=T("Level"))
+        self.lbl_profile_level = wx.StaticText(self.grp_video, label=T("级别"))
         self.cbo_profile_level = EditableComboBox(self.grp_video, choices=LEVEL_ALL, name="cbo_profile_level")
         self.cbo_profile_level.SetSelection(0)
 
-        self.lbl_preset = wx.StaticText(self.grp_video, label=T("Preset"))
+        self.lbl_preset = wx.StaticText(self.grp_video, label=T("预设"))
         self.cbo_preset = wx.ComboBox(
             self.grp_video, choices=PRESET_ALL,
             style=wx.CB_READONLY, name="cbo_preset")
         self.cbo_preset.SetSelection(0)
 
-        self.lbl_tune = wx.StaticText(self.grp_video, label=T("Tune"))
+        self.lbl_tune = wx.StaticText(self.grp_video, label=T("调整"))
         self.cbo_tune = wx.ComboBox(
             self.grp_video, choices=TUNE_ALL,
             style=wx.CB_READONLY, name="cbo_tune")
@@ -557,9 +557,9 @@ class MainFrame(wx.Frame):
         if LAYOUT_DEBUG:
             self.pnl_process.SetBackgroundColour("#fcc")
         self.prg_tqdm = wx.Gauge(self.pnl_process, style=wx.GA_HORIZONTAL)
-        self.btn_start = wx.Button(self.pnl_process, label=T("Start"))
-        self.btn_suspend = wx.Button(self.pnl_process, label=T("Suspend"))
-        self.btn_cancel = wx.Button(self.pnl_process, label=T("Cancel"))
+        self.btn_start = wx.Button(self.pnl_process, label=T("开始"))
+        self.btn_suspend = wx.Button(self.pnl_process, label=T("暂停"))
+        self.btn_cancel = wx.Button(self.pnl_process, label=T("取消"))
 
         layout = wx.BoxSizer(wx.HORIZONTAL)
         layout.Add(self.prg_tqdm, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 4)
@@ -727,7 +727,7 @@ class MainFrame(wx.Frame):
                     f"|YAML files|{YAML_EXTENSIONS}"
                     "|All Files|*.*")
         default_dir = resolve_default_dir(self.txt_input.GetValue())
-        with wx.FileDialog(self.pnl_file, T("Choose a file"),
+        with wx.FileDialog(self.pnl_file, T("选择文件"),
                            wildcard=wildcard, defaultDir=default_dir,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dlg_file:
             if dlg_file.ShowModal() == wx.ID_CANCEL:
@@ -739,7 +739,7 @@ class MainFrame(wx.Frame):
 
     def on_click_btn_input_dir(self, event):
         default_dir = resolve_default_dir(self.txt_input.GetValue())
-        with wx.DirDialog(self.pnl_file, T("Choose a directory"),
+        with wx.DirDialog(self.pnl_file, T("选择目录"),
                           defaultPath=default_dir,
                           style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST) as dlg_dir:
             if dlg_dir.ShowModal() == wx.ID_CANCEL:
@@ -779,7 +779,7 @@ class MainFrame(wx.Frame):
         default_dir = resolve_default_dir(self.txt_output.GetValue())
         if not path.exists(default_dir):
             default_dir = path.dirname(default_dir)
-        with wx.DirDialog(self.pnl_file, T("Choose a directory"),
+        with wx.DirDialog(self.pnl_file, T("选择目录"),
                           defaultPath=default_dir,
                           style=wx.DD_DEFAULT_STYLE) as dlg_dir:
             if dlg_dir.ShowModal() == wx.ID_CANCEL:
@@ -984,7 +984,7 @@ class MainFrame(wx.Frame):
 
         if path.exists(output_path) and not resume:
             with wx.MessageDialog(None,
-                                  message=output_path + "\n" + T("already exists. Overwrite?"),
+                                  message=output_path + "\n" + T("已存在，是否覆盖？"),
                                   caption=T("Confirm"), style=wx.YES_NO) as dlg:
                 return dlg.ShowModal() == wx.ID_YES
         else:
@@ -993,35 +993,35 @@ class MainFrame(wx.Frame):
     def show_validation_error_message(self, name, min_value, max_value):
         with wx.MessageDialog(
                 None,
-                message=T("`{}` must be a number {} - {}").format(name, min_value, max_value),
-                caption=T("Error"),
+                message=T("`{}` 必须是数字，范围: {} - {}").format(name, min_value, max_value),
+                caption=T("错误"),
                 style=wx.OK) as dlg:
             dlg.ShowModal()
 
     def parse_args(self):
         if not validate_number(self.cbo_divergence.GetValue(), 0.0, 100.0):
-            self.show_validation_error_message(T("3D Strength"), 0.0, 100.0)
+            self.show_validation_error_message(T("3D 强度"), 0.0, 100.0)
             return None
         if not validate_number(self.cbo_convergence.GetValue(), -100.0, 100.0):
-            self.show_validation_error_message(T("Convergence Plane"), -100.0, 100.0)
+            self.show_validation_error_message(T("收敛平面"), -100.0, 100.0)
             return None
         if not validate_number(self.cbo_pad.GetValue(), 0.0, 10.0, allow_empty=True):
             self.show_validation_error_message(T("Padding"), 0.0, 10.0)
             return None
         if not validate_number(self.cbo_edge_dilation.GetValue(), 0, 20, is_int=True, allow_empty=False):
-            self.show_validation_error_message(T("Edge Fix"), 0, 20)
+            self.show_validation_error_message(T("边缘修复"), 0, 20)
             return None
         if not validate_number(self.cbo_fps.GetValue(), 0.25, 1000.0, allow_empty=False):
-            self.show_validation_error_message(T("Max FPS"), 0.25, 1000.0)
+            self.show_validation_error_message(T("最大帧率"), 0.25, 1000.0)
             return None
         if not validate_number(self.cbo_crf.GetValue(), 0, 51, is_int=True):
             self.show_validation_error_message(T("CRF"), 0, 51)
             return None
         if not validate_number(self.cbo_ema_decay.GetValue(), 0.1, 0.999):
-            self.show_validation_error_message(T("Flicker Reduction"), 0.1, 0.999)
+            self.show_validation_error_message(T("闪烁减少"), 0.1, 0.999)
             return None
         if not validate_number(self.cbo_foreground_scale.GetValue(), -3.0, 3.0, allow_empty=False):
-            self.show_validation_error_message(T("Foreground Scale"), -3, 3)
+            self.show_validation_error_message(T("前景比例"), -3, 3)
             return None
 
         zoed_height = self.cbo_zoed_resolution.GetValue()
@@ -1224,11 +1224,11 @@ class MainFrame(wx.Frame):
 
             if not self.stop_event.is_set():
                 self.prg_tqdm.SetValue(self.prg_tqdm.GetRange())
-                self.SetStatusText(T("Finished"))
+                self.SetStatusText(T("完成"))
             else:
-                self.SetStatusText(T("Cancelled"))
+                self.SetStatusText(T("已取消"))
         except: # noqa
-            self.SetStatusText(T("Error"))
+            self.SetStatusText(T("错误"))
             e_type, e, tb = sys.exc_info()
             message = getattr(e, "message", str(e))
             traceback.print_tb(tb)
@@ -1237,7 +1237,7 @@ class MainFrame(wx.Frame):
         self.processing = False
         self.btn_cancel.Disable()
         self.btn_suspend.Disable()
-        self.btn_suspend.SetLabel(T("Suspend"))
+        self.btn_suspend.SetLabel(T("暂停"))
         self.update_start_button_state()
 
         # free vram
@@ -1252,12 +1252,12 @@ class MainFrame(wx.Frame):
     def on_click_btn_suspend(self, event):
         if self.suspend_event.is_set():
             self.suspend_event.clear()
-            self.btn_suspend.SetLabel(T("Resume"))
+            self.btn_suspend.SetLabel(T("继续"))
         else:
             self.start_time = time()
             self.suspend_pos = self.prg_tqdm.GetValue()
             self.suspend_event.set()
-            self.btn_suspend.SetLabel(T("Suspend"))
+            self.btn_suspend.SetLabel(T("暂停"))
 
     def on_tqdm(self, event):
         type, value, desc = event.GetValue()

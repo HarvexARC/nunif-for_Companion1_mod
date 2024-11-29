@@ -15,7 +15,7 @@ from nunif.utils.pil_io import load_image_simple
 from nunif.models import load_model  # , compile_model
 import nunif.utils.video as VU
 from nunif.utils.ui import is_image, is_video, is_text, is_output_dir, make_parent_dir, list_subdir, TorchHubDir
-from nunif.device import create_device, autocast, device_is_mps, device_is_cuda, mps_is_available, xpu_is_available
+from nunif.device import create_device, autocast, device_is_mps, device_is_cuda
 from nunif.models.data_parallel import DeviceSwitchInference
 from . import export_config
 from . dilation import dilate_edge
@@ -152,7 +152,6 @@ def backward_warp(c, grid, delta, delta_scale):
 
 
 def make_grid(batch, width, height, device):
-    # TODO: xpu: torch.meshgrid causes fallback from XPU to CPU, but it is faster to simply do nothing
     mesh_y, mesh_x = torch.meshgrid(torch.linspace(-1, 1, height, device=device),
                                     torch.linspace(-1, 1, width, device=device), indexing="ij")
     mesh_y = mesh_y.reshape(1, 1, height, width).expand(batch, 1, height, width)
@@ -253,6 +252,10 @@ VR180_SUFFIX = "_180x180_LR"
 ANAGLYPH_SUFFIX = "_redcyan"
 DEBUG_SUFFIX = "_debug"
 
+TWODD_SUFFIX = "_2DD"
+HALF_TWODD_SUFFIX = "_h2DD"
+C_ONE_SUFFIX = "_Companion_C1"
+
 # SMB Invalid characters
 # Linux SMB replaces file names with random strings if they contain these invalid characters
 # So need to remove these for the filenaming rules.
@@ -274,6 +277,12 @@ def make_output_filename(input_filename, args, video=False):
         auto_detect_suffix = ANAGLYPH_SUFFIX + f"_{args.anaglyph}"
     elif args.debug_depth:
         auto_detect_suffix = DEBUG_SUFFIX
+    elif args.twodd:
+        auto_detect_suffix = TWODD_SUFFIX
+    elif args.c_one:
+        auto_detect_suffix = C_ONE_SUFFIX
+    elif args.htwodd:
+        auto_detect_suffix = HALF_TWODD_SUFFIX
     else:
         auto_detect_suffix = FULL_SBS_SUFFIX
 
@@ -458,6 +467,218 @@ def apply_divergence(depth, im_org, args, side_model, ema=False):
 
     return left_eye, right_eye
 
+def postprocess_image_c_one(depth, im_org, args, side_model, ema=False):
+    batch = True
+    if depth.ndim != 4:
+        # CHW
+        depth = depth.unsqueeze(0)
+        im_org = im_org.unsqueeze(0)
+        batch = False
+    else:
+        # BCHW
+        pass
+
+    for i in range(depth.shape[0]):
+        depth_min, depth_max = depth[i].min(), depth[i].max()
+        if ema:
+            depth_min, depth_max = args.state["ema"].update(depth_min, depth_max)
+        depth[i] = normalize_depth(depth[i], depth_min=depth_min, depth_max=depth_max)
+
+    if args.method in {"grid_sample", "backward"}:
+        depth = get_mapper(args.mapper)(depth)
+
+    elif args.method in {"forward", "forward_fill"}:
+        depth = get_mapper(args.mapper)(depth)
+    else:
+        if args.stereo_width is not None:
+            # NOTE: use src aspect ratio instead of depth aspect ratio
+            H, W = im_org.shape[2:]
+            stereo_width = min(W, args.stereo_width)
+            if depth.shape[3] != stereo_width:
+                new_w = stereo_width
+                new_h = int(H * (stereo_width / W))
+                depth = F.interpolate(depth, size=(new_h, new_w),
+                                      mode="bilinear", align_corners=True, antialias=True)
+                depth = torch.clamp(depth, 0, 1)
+
+    div_val = args.divergence
+    div_val_unit = 0.1 * args.divergence
+    div_val = 0.5*div_val_unit
+    eye_19, eye_20 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_18, eye_21 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_17, eye_22 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_16, eye_23 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_15, eye_24 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_14, eye_25 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_13, eye_26 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_12, eye_27 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_11, eye_28 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_10, eye_29 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_9, eye_30 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_8, eye_31 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_7, eye_32 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_6, eye_33 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_5, eye_34 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_4, eye_35 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    eye_3, eye_36 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema)
+    div_val += div_val_unit
+    # div_val = 2.0*args.divergence
+    eye_2, eye_37 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, ema)
+    div_val += div_val_unit
+    eye_1, eye_38 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, ema)
+    div_val += div_val_unit
+    # div_val = 2.0*args.divergence
+    eye_0, eye_39 = apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, ema)
+
+    eye_0 = TF.resize(eye_0, (eye_0.shape[1] // 4, eye_0.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_1 = TF.resize(eye_1, (eye_1.shape[1] // 4, eye_1.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_2 = TF.resize(eye_2, (eye_2.shape[1] // 4, eye_2.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_3 = TF.resize(eye_3, (eye_3.shape[1] // 4, eye_3.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_4 = TF.resize(eye_4, (eye_4.shape[1] // 4, eye_4.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_5 = TF.resize(eye_5, (eye_5.shape[1] // 4, eye_5.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_6 = TF.resize(eye_6, (eye_6.shape[1] // 4, eye_6.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_7 = TF.resize(eye_7, (eye_7.shape[1] // 4, eye_7.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_8 = TF.resize(eye_8, (eye_8.shape[1] // 4, eye_8.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_9 = TF.resize(eye_9, (eye_9.shape[1] // 4, eye_9.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_10 = TF.resize(eye_10, (eye_10.shape[1] // 4, eye_10.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_11 = TF.resize(eye_11, (eye_11.shape[1] // 4, eye_11.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_12 = TF.resize(eye_12, (eye_12.shape[1] // 4, eye_12.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_13 = TF.resize(eye_13, (eye_13.shape[1] // 4, eye_13.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_14 = TF.resize(eye_14, (eye_14.shape[1] // 4, eye_14.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_15 = TF.resize(eye_15, (eye_15.shape[1] // 4, eye_15.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_16 = TF.resize(eye_16, (eye_16.shape[1] // 4, eye_16.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_17 = TF.resize(eye_17, (eye_17.shape[1] // 4, eye_17.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_18 = TF.resize(eye_18, (eye_18.shape[1] // 4, eye_18.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_19 = TF.resize(eye_19, (eye_19.shape[1] // 4, eye_19.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_20 = TF.resize(eye_20, (eye_20.shape[1] // 4, eye_20.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_21 = TF.resize(eye_21, (eye_21.shape[1] // 4, eye_21.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_22 = TF.resize(eye_22, (eye_22.shape[1] // 4, eye_22.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_23 = TF.resize(eye_23, (eye_23.shape[1] // 4, eye_23.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_24 = TF.resize(eye_24, (eye_24.shape[1] // 4, eye_24.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_25 = TF.resize(eye_25, (eye_25.shape[1] // 4, eye_25.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_26 = TF.resize(eye_26, (eye_26.shape[1] // 4, eye_26.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_27 = TF.resize(eye_27, (eye_27.shape[1] // 4, eye_27.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_28 = TF.resize(eye_28, (eye_28.shape[1] // 4, eye_28.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_29 = TF.resize(eye_29, (eye_29.shape[1] // 4, eye_29.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_30 = TF.resize(eye_30, (eye_30.shape[1] // 4, eye_30.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_31 = TF.resize(eye_31, (eye_31.shape[1] // 4, eye_31.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_32 = TF.resize(eye_32, (eye_32.shape[1] // 4, eye_32.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_33 = TF.resize(eye_33, (eye_33.shape[1] // 4, eye_33.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_34 = TF.resize(eye_34, (eye_34.shape[1] // 4, eye_34.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_35 = TF.resize(eye_35, (eye_35.shape[1] // 4, eye_35.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)                     
+    eye_36 = TF.resize(eye_36, (eye_36.shape[1] // 4, eye_36.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_37 = TF.resize(eye_37, (eye_37.shape[1] // 4, eye_37.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+    eye_38 = TF.resize(eye_38, (eye_38.shape[1] // 4, eye_38.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)                  
+    eye_39 = TF.resize(eye_39, (eye_39.shape[1] // 4, eye_39.shape[2] // 4),
+                         interpolation=InterpolationMode.BICUBIC, antialias=True)
+
+    h0 = torch.cat([eye_0, eye_1, eye_2, eye_3, eye_4, eye_5, eye_6, eye_7], dim=2)
+    h1 = torch.cat([eye_8, eye_9, eye_10, eye_11, eye_12, eye_13, eye_14, eye_15], dim=2)
+    h2 = torch.cat([eye_16, eye_17, eye_18, eye_19, eye_20, eye_21, eye_22, eye_23], dim=2)
+    h3 = torch.cat([eye_24, eye_25, eye_26, eye_27, eye_28, eye_29, eye_30, eye_31], dim=2)
+    h4 = torch.cat([eye_32, eye_33, eye_34, eye_35, eye_36, eye_37, eye_38, eye_39], dim=2)
+
+    # sbs = torch.cat([eye_0, eye_39], dim=2)
+    # C1
+    sbs = torch.cat([h0, h1, h2, h3, h4], dim=1)
+    # Looking Glass
+    # sbs = torch.cat([h4, h3, h2, h1, h0], dim=1)
+
+    # sbs = h0
+    sbs = torch.clamp(sbs, 0., 1.)
+
+    return sbs
+
+def apply_divergence_c_one_pair(depth, im_org, args, side_model, div_val, batch, ema=False):
+
+    if args.method in {"grid_sample", "backward"}:
+        # depth = get_mapper(args.mapper)(depth)
+        left_eye, right_eye = apply_divergence_grid_sample(
+            im_org, depth,
+            div_val, convergence=args.convergence)
+    elif args.method in {"forward", "forward_fill"}:
+        # depth = get_mapper(args.mapper)(depth)
+        left_eye, right_eye = apply_divergence_forward_warp(
+            im_org, depth,
+            div_val, convergence=args.convergence,
+            method=args.method)
+    else:
+        # if args.stereo_width is not None:
+            # NOTE: use src aspect ratio instead of depth aspect ratio
+            # H, W = im_org.shape[2:]
+            # stereo_width = min(W, args.stereo_width)
+            # if depth.shape[3] != stereo_width:
+                # new_w = stereo_width
+                # new_h = int(H * (stereo_width / W))
+                # depth = F.interpolate(depth, size=(new_h, new_w),
+                                      # mode="bilinear", align_corners=True, antialias=True)
+                # depth = torch.clamp(depth, 0, 1)
+        left_eye, right_eye = apply_divergence_nn_LR(
+            side_model, im_org, depth,
+            div_val, args.convergence,
+            mapper=args.mapper,
+            enable_amp=not args.disable_amp)
+
+    if not batch:
+        left_eye = left_eye.squeeze(0)
+        right_eye = right_eye.squeeze(0)
+
+    return left_eye, right_eye
 
 def postprocess_image(left_eye, right_eye, args):
     # CHW
@@ -519,6 +740,49 @@ def postprocess_image(left_eye, right_eye, args):
     return sbs
 
 
+
+def postprocess_2dd_image(left_2d, right_depth, args):
+    # CHW
+    if args.pad is not None:
+        pad_h = int(left_2d.shape[1] * args.pad) // 2
+        pad_w = int(left_2d.shape[2] * args.pad) // 2
+        left_2d = TF.pad(left_2d, (pad_w, pad_h, pad_w, pad_h), padding_mode="constant")
+        right_depth = TF.pad(right_depth, (pad_w, pad_h, pad_w, pad_h), padding_mode="constant")
+    if args.twodd:
+        # left_2d = equirectangular_projection(left_2d, device=left_2d.device)
+        # right_depth = equirectangular_projection(left_2d, device=left_2d.device)
+        left_2d = TF.resize(left_2d, (left_2d.shape[1], left_2d.shape[2]),
+                             interpolation=InterpolationMode.BICUBIC, antialias=True)
+        right_depth = TF.resize(right_depth, (left_2d.shape[1], left_2d.shape[2]),
+                              interpolation=InterpolationMode.BICUBIC, antialias=True)
+    elif args.htwodd:
+        left_2d = TF.resize(left_2d, (left_2d.shape[1], left_2d.shape[2] // 2),
+                             interpolation=InterpolationMode.BICUBIC, antialias=True)
+        right_depth = TF.resize(right_depth, (left_2d.shape[1], left_2d.shape[2]),
+                              interpolation=InterpolationMode.BICUBIC, antialias=True)
+
+    sbs = torch.cat([left_2d, right_depth], dim=2)
+    sbs = torch.clamp(sbs, 0., 1.)
+
+    h, w = sbs.shape[1:]
+    new_w, new_h = w, h
+    if args.max_output_height is not None and new_h > args.max_output_height:
+        if args.keep_aspect_ratio:
+            new_w = int(args.max_output_height / new_h * new_w)
+        new_h = args.max_output_height
+    if args.max_output_width is not None and new_w > args.max_output_width:
+        if args.keep_aspect_ratio:
+            new_h = int(args.max_output_width / new_w * new_h)
+        new_w = args.max_output_width
+    if new_w != w or new_h != h:
+        new_h -= new_h % 2
+        new_w -= new_w % 2
+        sbs = TF.resize(sbs, (new_h, new_w),
+                        interpolation=InterpolationMode.BICUBIC, antialias=True)
+        sbs = torch.clamp(sbs, 0, 1)
+    return sbs
+
+
 def debug_depth_image(depth, args, ema=False):
     depth = depth.float()
     depth_min, depth_max = depth.min(), depth.max()
@@ -537,6 +801,18 @@ def debug_depth_image(depth, args, ema=False):
 
     return out
 
+def preprocess_depth_image(depth, args, ema=False):
+    depth = depth.float()
+    depth_min, depth_max = depth.min(), depth.max()
+    if ema:
+        depth_min, depth_max = args.state["ema"].update(depth_min, depth_max)
+    mean_depth, std_depth = depth.mean().item(), depth.std().item()
+    depth = normalize_depth(depth, depth_min=depth_min, depth_max=depth_max)
+    depth2 = get_mapper(args.mapper)(depth)
+    # out = torch.cat([depth, depth2], dim=2).cpu()
+    out = TF.to_pil_image(depth2)
+
+    return out
 
 def process_image(im, args, depth_model, side_model, return_tensor=False):
     with torch.inference_mode():
@@ -548,14 +824,30 @@ def process_image(im, args, depth_model, side_model, return_tensor=False):
             device=im.device,
             edge_dilation=args.edge_dilation,
             resize_depth=False)
-        if not args.debug_depth:
+        if args.debug_depth:
+            return debug_depth_image(depth, args, args.ema_normalize)
+        elif args.twodd or args.htwodd:
+            left_2d = im_org
+            right_depth = preprocess_depth_image(depth, args, args.ema_normalize)
+            right_depth = right_depth.convert('RGB')
+            right_depth = TF.to_tensor(right_depth).to(args.state["device"])
+            sbs = postprocess_2dd_image(left_2d, right_depth, args)
+            if not return_tensor:
+                sbs = TF.to_pil_image(sbs)
+            return sbs
+            # return debug_depth_image(depth, args, args.ema_normalize)
+        elif args.c_one:
+            sbs = postprocess_image_c_one(depth, im_org, args, side_model)
+            if not return_tensor:
+                sbs = TF.to_pil_image(sbs)
+            return sbs
+        else:
             left_eye, right_eye = apply_divergence(depth, im_org, args, side_model)
             sbs = postprocess_image(left_eye, right_eye, args)
             if not return_tensor:
                 sbs = TF.to_pil_image(sbs)
             return sbs
-        else:
-            return debug_depth_image(depth, args, args.ema_normalize)
+
 
 
 def process_images(files, output_dir, args, depth_model, side_model, title=None):
@@ -663,7 +955,7 @@ def process_video_full(input_filename, output_path, args, depth_model, side_mode
             args.state["ema"].clear()
         return frame
 
-    if args.low_vram or args.debug_depth:
+    if args.low_vram or args.debug_depth or args.twodd or args.htwodd or args.c_one:
         @torch.inference_mode()
         def frame_callback(frame):
             if frame is None:
@@ -911,8 +1203,8 @@ def export_images(args):
 
 
 def get_resume_seq(depth_dir, rgb_dir):
-    depth_files = sorted([path.basename(fn) for fn in ImageLoader.listdir(depth_dir)])
-    rgb_files = sorted([path.basename(fn) for fn in ImageLoader.listdir(rgb_dir)])
+    depth_files = sorted(os.listdir(depth_dir))
+    rgb_files = sorted(os.listdir(rgb_dir))
     if rgb_files and depth_files:
         last_seq = int(path.splitext(min(rgb_files[-1], depth_files[-1]))[0], 10)
     else:
@@ -1312,6 +1604,8 @@ def process_config_images(config, args, side_model):
                 sbs = postprocess_image(left_eye, right_eye, args)
                 sbs = TF.to_pil_image(sbs)
 
+
+
                 output_filename = path.join(
                     output_dir,
                     make_output_filename(rgb_filename, args, video=False))
@@ -1346,53 +1640,53 @@ def create_parser(required_true=True):
             return f"{self.start} <= value <= {self.end}"
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    if torch.cuda.is_available() or mps_is_available() or xpu_is_available():
+    if torch.cuda.is_available() or torch.backends.mps.is_available():
         default_gpu = 0
     else:
         default_gpu = -1
 
     parser.add_argument("--input", "-i", type=str, required=required_true,
-                        help="input file or directory")
+                        help="输入文件或目录")
     parser.add_argument("--output", "-o", type=str, required=required_true,
-                        help="output file or directory")
+                        help="输出文件或目录")
     parser.add_argument("--gpu", "-g", type=int, nargs="+", default=[default_gpu],
-                        help="GPU device id. -1 for CPU")
+                        help="GPU设备ID。-1表示使用CPU")
     parser.add_argument("--method", type=str, default="row_flow",
                         choices=["grid_sample", "backward", "forward", "forward_fill",
                                  "row_flow", "row_flow_sym",
                                  "row_flow_v3", "row_flow_v3_sym",
                                  "row_flow_v2"],
-                        help="left-right divergence method")
+                        help="左右视差计算方法")
     parser.add_argument("--divergence", "-d", type=float, default=2.0,
-                        help=("strength of 3D effect. 0-2 is reasonable value"))
+                        help="3D效果强度。合理值为0-2")
     parser.add_argument("--convergence", "-c", type=float, default=0.5,
-                        help=("(normalized) distance of convergence plane(screen position). 0-1 is reasonable value"))
+                        help="会聚平面的距离(屏幕位置)。合理值为0-1")
     parser.add_argument("--update", action="store_true",
-                        help="force update midas models from torch hub")
+                        help="强制更新Midas模型")
     parser.add_argument("--recursive", "-r", action="store_true",
-                        help="process all subdirectories")
+                        help="处理所有子目录")
     parser.add_argument("--resume", action="store_true",
-                        help="skip processing when the output file already exists")
+                        help="如果输出文件已存在，则跳过处理")
     parser.add_argument("--batch-size", type=int, default=16, choices=[Range(1, 256)],
-                        help="batch size for RowFlow model, 256x256 tiled input. !!DEPRECATED!!")
+                        help="RowFlow模型的批处理大小（已弃用）")
     parser.add_argument("--zoed-batch-size", type=int, default=2, choices=[Range(1, 64)],
-                        help="batch size for ZoeDepth model. ignored when --low-vram")
+                        help="ZoeDepth模型的批处理大小。低显存模式下会忽略此设置")
     parser.add_argument("--max-fps", type=float, default=30,
-                        help="max framerate for video. output fps = min(fps, --max-fps)")
-    parser.add_argument("--profile-level", type=str, help="h264 profile level")
+                        help="视频的最大帧率。输出帧率=min(帧率, --max-fps)")
+    parser.add_argument("--profile-level", type=str, help="h264编码器的配置级别")
     parser.add_argument("--crf", type=int, default=20,
-                        help="constant quality value for video. smaller value is higher quality")
+                        help="视频的恒定质量值。值越小质量越高")
     parser.add_argument("--preset", type=str, default="ultrafast",
                         choices=["ultrafast", "superfast", "veryfast", "faster", "fast",
                                  "medium", "slow", "slower", "veryslow", "placebo"],
-                        help="encoder preset option for video")
+                        help="视频编码器的预设选项")
     parser.add_argument("--tune", type=str, nargs="+", default=[],
                         choices=["film", "animation", "grain", "stillimage", "psnr",
                                  "fastdecode", "zerolatency"],
-                        help="encoder tunings option for video")
+                        help="视频编码器的调整选项")
     parser.add_argument("--yes", "-y", action="store_true", default=False,
-                        help="overwrite output files")
-    parser.add_argument("--pad", type=float, help="pad_size = int(size * pad)")
+                        help="覆盖输出文件")
+    parser.add_argument("--pad", type=float, help="填充大小=尺寸×pad")
     parser.add_argument("--depth-model", type=str, default="ZoeD_N",
                         choices=["ZoeD_N", "ZoeD_K", "ZoeD_NK",
                                  "Any_S", "Any_B", "Any_L",

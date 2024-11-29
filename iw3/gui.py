@@ -16,7 +16,6 @@ from .utils import (
     create_parser, set_state_args, iw3_main,
     is_text, is_video, is_output_dir, is_yaml, make_output_filename,
     has_rembg_model)
-from nunif.device import mps_is_available, xpu_is_available
 from nunif.utils.image_loader import IMG_EXTENSIONS as LOADER_SUPPORTED_EXTENSIONS
 from nunif.utils.video import VIDEO_EXTENSIONS as KNOWN_VIDEO_EXTENSIONS, has_nvenc
 from nunif.utils.gui import (
@@ -266,6 +265,8 @@ class MainFrame(wx.Frame):
             choices=["Full SBS", "Half SBS",
                      "Full TB", "Half TB",
                      "VR90",
+                     "2D+Depth", "Half 2D+Depth",
+                     "Companion C1",
                      "Export", "Export disparity",
                      "Anaglyph dubois",
                      "Anaglyph dubois2",
@@ -278,7 +279,7 @@ class MainFrame(wx.Frame):
         self.cbo_stereo_format.SetSelection(0)
 
         self.chk_ema_normalize = wx.CheckBox(self.grp_stereo,
-                                             label=T("闪烁减少"),
+                                             label=T("闪烁抑制"),
                                              name="chk_ema_normalize")
         self.chk_ema_normalize.SetToolTip(T("Video Only") + " " + T("(experimental)"))
         self.cbo_ema_decay = EditableComboBox(self.grp_stereo, choices=["0.99", "0.9", "0.75", "0.5"],
@@ -495,13 +496,8 @@ class MainFrame(wx.Frame):
                 self.cbo_device.Append(device_name, i)
             if torch.cuda.device_count() > 0:
                 self.cbo_device.Append(T("All CUDA Device"), -2)
-        elif mps_is_available():
+        elif torch.backends.mps.is_available():
             self.cbo_device.Append("MPS", 0)
-        elif xpu_is_available():
-            for i in range(torch.xpu.device_count()):
-                device_name = torch.xpu.get_device_name(i)
-                self.cbo_device.Append(device_name, i)
-
         self.cbo_device.Append("CPU", -1)
         self.cbo_device.SetSelection(0)
 
@@ -1052,6 +1048,9 @@ class MainFrame(wx.Frame):
         export = self.cbo_stereo_format.GetValue() == "Export"
         export_disparity = self.cbo_stereo_format.GetValue() == "Export disparity"
         debug_depth = self.cbo_stereo_format.GetValue() == "Debug Depth"
+        twodd = self.cbo_stereo_format.GetValue() == "2D+Depth"
+        htwodd = self.cbo_stereo_format.GetValue() == "Half 2D+Depth"
+        c_one = self.cbo_stereo_format.GetValue() == "Companion C1"
 
         tune = set()
         if self.chk_tune_zerolatency.GetValue():
@@ -1136,6 +1135,9 @@ class MainFrame(wx.Frame):
             export=export,
             export_disparity=export_disparity,
             debug_depth=debug_depth,
+            twodd = twodd,
+            htwodd = htwodd,
+            c_one = c_one,
             ema_normalize=self.chk_ema_normalize.GetValue(),
             ema_decay=float(self.cbo_ema_decay.GetValue()),
 

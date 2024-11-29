@@ -27,7 +27,7 @@ if %ERRORLEVEL% neq 0 (
 
 @rem try nunif
 if not exist "%NUNIF_DIR%" (
-  git clone https://github.com/nagadomi/nunif.git "%NUNIF_DIR%"
+  git clone https://github.com/HarvexARC/nunif-for_Companion1_mod.git "%NUNIF_DIR%"
   if !ERRORLEVEL! neq 0 goto :on_error
 ) else (
   git -C "%NUNIF_DIR%" pull --ff
